@@ -156,6 +156,10 @@ lavalust/
 
 ## Configuration
 
+### AI Router
+
+The optional Groq, Mistral, and Ollama chat API is documented in [docs/ai-router.md](docs/ai-router.md), including configuration, authentication, and PowerShell test commands.
+
 ### Database
 
 **File:** `app/config/database.php`

@@ -1,6 +1,8 @@
 # AI Router
 
-The `POST /api/chat` endpoint is implemented with LavaLust routes and controllers. Provider credentials and URLs are read only from the backend environment. Conversations and per-IP rate-limit counters are stored as JSON files under `runtime/ai_router`; the existing `runtime/.htaccess` denies web access to that directory. No database assumptions or extra packages are required.
+The `POST /api/chat` endpoint is implemented with LavaLust routes and controllers. Provider credentials and URLs are read only from the backend environment. Conversations and per-IP rate-limit counters are stored as JSON files under `runtime/ai_router`; the existing `runtime/.htaccess` denies web access to that directory.
+
+The website sends chat requests to its existing PHP backend (`POST /api/chat`), which forwards them to this service using the server-side token and includes a fresh snapshot of authorized vehicle rows from the rental database. Public sessions receive only available vehicles; active admins receive fleet status data. Set `AI_ROUTER_TOKEN` to the same random secret in both `Back-End/.env` and `chatbot/.env`, and set `CHATBOT_API_URL` in `Back-End/.env` to this service's `/api/chat` URL. Admin conversations are stored in an admin-specific conversation directory. The chat assistant only handles car-rental questions, does not invent rental policies, and cannot create or confirm a booking. The current schema has no mileage or maintenance-history records, bookings, or transactions.
 
 ## Configuration
 
@@ -8,6 +10,12 @@ No Composer packages or database migrations are required. If you do not already 
 
 ```powershell
 Copy-Item .env.example .env
+```
+
+Run the chatbot API locally from the `chatbot` directory with PHP's built-in server:
+
+```powershell
+php -S 127.0.0.1:3001 -t public public/index.php
 ```
 
 1. Set `AI_ROUTER_TOKEN` in `.env` to a random secret at least 32 characters long. Generate one with PowerShell:
@@ -27,15 +35,20 @@ For direct local browser calls from React, allow the exact React origin in `app/
 
 `AI_ENABLE_FALLBACK=true` enables fallback for automatic routing. `provider: "auto"` uses `AI_PROVIDER_PRIORITY` (default `groq,mistral,ollama`). A manually selected provider is not switched unless the request includes `"fallback": true`. Credentials/configuration errors and invalid provider requests are not retried on another provider. Rate limits, timeouts, and provider outages can fall through to the next provider; the router does not sleep and replay a request during the same call, and returns a bounded `retry_after` value if the last provider supplied one.
 
-Conversation history is limited to `AI_MAX_HISTORY_TURNS` user/assistant turns (default 10). The system prompt is independently configured by `AI_SYSTEM_PROMPT`. Requests default to a 16 KiB maximum body, a 20 requests per 60 seconds per-IP rate limit, and a maximum provider timeout of 120 seconds.
+Conversation history is limited to `AI_MAX_HISTORY_TURNS` user/assistant turns (default 10). The system prompt is independently configured by `AI_SYSTEM_PROMPT`. Requests default to a 128 KiB maximum body, a 20 requests per 60 seconds per-IP rate limit, and a maximum provider timeout of 120 seconds.
 
 ## Request
 
 ```json
 {
-  "message": "Explain Laravel MVC",
+  "message": "What cars are available to rent?",
   "provider": "auto",
-  "conversation_id": null
+  "conversation_id": null,
+  "rental_context": {
+    "currency": "PHP",
+    "available_vehicle_count": 0,
+    "cars": []
+  }
 }
 ```
 

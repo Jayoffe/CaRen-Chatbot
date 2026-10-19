@@ -43,7 +43,7 @@ class ChatController extends Controller
             ], 401);
         }
 
-        $maximumBytes = $this->positiveInteger(getenv('AI_MAX_REQUEST_BYTES'), 16384, 1048576);
+        $maximumBytes = $this->positiveInteger(getenv('AI_MAX_REQUEST_BYTES'), 131072, 1048576);
         $contentLength = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
         if ($contentLength > $maximumBytes) {
             $this->respond([
@@ -133,13 +133,40 @@ class ChatController extends Controller
             ], 400);
         }
 
+        $rentalContext = $input['rental_context'] ?? [];
+        if (!is_array($rentalContext)) {
+            $this->respond([
+                'success' => false,
+                'error' => [
+                    'code' => 'INVALID_RENTAL_CONTEXT',
+                    'message' => 'The rental context must be an object.'
+                ]
+            ], 400);
+        }
+
+        $conversationScope = $input['conversation_scope'] ?? 'public';
+        if (!is_string($conversationScope)
+            || ($conversationScope !== 'public' && !preg_match('/^admin:[1-9][0-9]{0,9}$/', $conversationScope))) {
+            $this->respond([
+                'success' => false,
+                'error' => [
+                    'code' => 'INVALID_CONVERSATION_SCOPE',
+                    'message' => 'The chat conversation scope is invalid.'
+                ]
+            ], 400);
+        }
+
         try {
+            $clientIp = $_SERVER['HTTP_X_CHAT_CLIENT_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+            if (!filter_var($clientIp, FILTER_VALIDATE_IP)) {
+                $clientIp = 'unknown';
+            }
             $limiter = new RateLimiter(
                 APP_DIR . '../runtime/ai_router/rate_limits',
                 $this->positiveInteger(getenv('AI_RATE_LIMIT_REQUESTS'), 20, 1000),
                 $this->positiveInteger(getenv('AI_RATE_LIMIT_SECONDS'), 60, 86400)
             );
-            $retryAfter = $limiter->consume($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+            $retryAfter = $limiter->consume($clientIp);
             if ($retryAfter > 0) {
                 $this->respond([
                     'success' => false,
@@ -151,7 +178,7 @@ class ChatController extends Controller
             }
 
             $service = new ChatbotService();
-            $result = $service->chat($message, $provider, $conversationId, $fallback);
+            $result = $service->chat($message, $provider, $conversationId, $fallback, $rentalContext, $conversationScope);
             $this->respond([
                 'success' => true,
                 'provider' => $result['provider'],

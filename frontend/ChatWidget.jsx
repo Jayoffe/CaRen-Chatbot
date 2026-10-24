@@ -5,7 +5,7 @@ import './ChatWidget.css'
 
 const WELCOME_MESSAGE = 'Hi! I’m the DriveRent assistant. Ask me about available cars, rental prices, or rental requirements.'
 
-export default function ChatWidget() {
+export default function ChatWidget({ user }) {
   const [open, setOpen] = useState(false)
   const [minimized, setMinimized] = useState(false)
   const [message, setMessage] = useState('')
@@ -16,6 +16,8 @@ export default function ChatWidget() {
   const [requestError, setRequestError] = useState(null)
   const conversationRef = useRef(null)
   const inputRef = useRef(null)
+
+  if (!user || !user.role) return null
 
   useEffect(() => {
     if (open && !minimized) {

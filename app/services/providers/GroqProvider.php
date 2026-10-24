@@ -1,8 +1,5 @@
 <?php
 defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
-require_once APP_DIR . 'services/providers/AIProvider.php';
-require_once APP_DIR . 'services/HttpClient.php';
-
 class GroqProvider implements AIProvider
 {
     private $apiKey;

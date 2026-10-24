@@ -202,6 +202,7 @@ class ChatController extends Controller
             }
             $this->respond($payload, $exception->getHttpStatus(), $retryHeaders);
         } catch (RuntimeException $exception) {
+            error_log('Chat request failed: ' . $exception->getMessage());
             $this->respond([
                 'success' => false,
                 'error' => [

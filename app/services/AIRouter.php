@@ -1,10 +1,5 @@
 <?php
 defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
-require_once APP_DIR . 'services/ProviderException.php';
-require_once APP_DIR . 'services/providers/GroqProvider.php';
-require_once APP_DIR . 'services/providers/MistralProvider.php';
-require_once APP_DIR . 'services/providers/OllamaProvider.php';
-
 class AIRouter
 {
     private $providers;
@@ -51,7 +46,7 @@ class AIRouter
         if ($automatic && !$canFallback) {
             $candidates = [reset($candidates)];
         }
-        $failures = [];
+        $failureCount = 0;
         $lastException = null;
         $retryAfter = null;
 
@@ -62,25 +57,25 @@ class AIRouter
                 return $result;
             } catch (ProviderException $exception) {
                 $lastException = $exception;
+                $failureCount++;
                 if ($exception->getRetryAfter() !== null) {
                     $retryAfter = $exception->getRetryAfter();
                 }
-                $failures[] = ['provider' => $name, 'code' => $exception->getPublicCode()];
 
-                if ($automatic && $exception->getPublicCode() === 'PROVIDER_NOT_CONFIGURED') {
-                    continue;
+                if ($exception->getPublicCode() === 'PROVIDER_NOT_CONFIGURED') {
+                    if ($canFallback) {
+                        continue;
+                    }
+                    throw $exception;
                 }
 
                 if (!$canFallback || !$exception->isRetryable()) {
-                    if (!$automatic || !$exception->isRetryable()) {
-                        throw $exception;
-                    }
-                    break;
+                    throw $exception;
                 }
             }
         }
 
-        if (count($failures) === 1 && $lastException instanceof ProviderException) {
+        if ($failureCount === 1 && $lastException instanceof ProviderException) {
             throw $lastException;
         }
 

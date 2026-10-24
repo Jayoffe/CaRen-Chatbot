@@ -95,6 +95,15 @@ $autoload['helpers'] = array();
 $autoload['models'] = array();
 
 /*
+| ------------------------------------------------------------------
+| Auto-load Controllers
+| ------------------------------------------------------------------
+| Controllers are normally loaded from their routes. This list also
+| supports applications that want to preload their app controllers.
+*/
+$autoload['controllers'] = array('ChatController', 'Welcome');
+
+/*
 | -------------------------------------------------------------------
 |  Auto-load Config files
 | -------------------------------------------------------------------
@@ -106,5 +115,29 @@ $autoload['models'] = array();
 | config files.  Otherwise, leave it blank.
 |
 */
-$autoload['configs'] = array();
+$autoload['configs'] = array('api');
+
+$serviceClasses = [
+    'AIProvider' => 'services/providers/AIProvider.php',
+    'AIRouter' => 'services/AIRouter.php',
+    'ChatbotService' => 'services/ChatbotService.php',
+    'ConversationStore' => 'services/ConversationStore.php',
+    'GroqProvider' => 'services/providers/GroqProvider.php',
+    'HttpClient' => 'services/HttpClient.php',
+    'MistralProvider' => 'services/providers/MistralProvider.php',
+    'OllamaProvider' => 'services/providers/OllamaProvider.php',
+    'ProviderException' => 'services/ProviderException.php',
+    'RateLimiter' => 'services/RateLimiter.php',
+];
+
+spl_autoload_register(static function ($class) use ($serviceClasses) {
+    if (!isset($serviceClasses[$class])) {
+        return;
+    }
+
+    $path = APP_DIR . $serviceClasses[$class];
+    if (is_file($path)) {
+        include_once $path;
+    }
+});
 ?>

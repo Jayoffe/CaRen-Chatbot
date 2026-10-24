@@ -221,6 +221,23 @@ $router->get('/api/users', 'Api::users');
 
 ---
 
+## DriveRent Chatbot service
+
+This folder provides the DriveRent chat API and the React widget. The browser
+uses the LavaLust API in `..\Back-End`; that API forwards chat requests here
+using a shared bearer token.
+
+1. Copy `.env.example` to `.env`.
+2. Set `AI_ROUTER_TOKEN` to the same private value configured in
+   `..\Back-End\.env`, and configure at least one provider API key or a
+   reachable Ollama service.
+3. Start the service from this folder with `php lava serve --port=3001`.
+4. The React app imports the widget from this folder and sends requests through
+   the LavaLust API on port 3000.
+
+Conversation history and rate limits are stored under this application's
+`runtime` directory; they do not require additional database tables.
+
 ## Philosophy
 
 LavaLust is built on a single principle: **minimal core, maximum control.**

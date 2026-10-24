@@ -1,9 +1,6 @@
 <?php
 defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 
-require_once APP_DIR . 'services/ChatbotService.php';
-require_once APP_DIR . 'services/RateLimiter.php';
-
 class ChatController extends Controller
 {
     public function chat()

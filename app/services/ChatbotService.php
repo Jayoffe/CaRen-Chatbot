@@ -1,8 +1,5 @@
 <?php
 defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
-require_once APP_DIR . 'services/AIRouter.php';
-require_once APP_DIR . 'services/ConversationStore.php';
-
 class ChatbotService
 {
     private const OUT_OF_SCOPE_REPLY = 'I’m here to help with car rentals only. I can answer questions about available vehicles, prices, rental requirements, and how to explore the fleet.';

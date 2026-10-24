@@ -1,7 +1,5 @@
 <?php
 defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
-require_once APP_DIR . 'services/ProviderException.php';
-
 class ConversationStore
 {
     private $directory;
@@ -66,11 +64,21 @@ class ConversationStore
         $path = $this->directory . DIRECTORY_SEPARATOR . $conversationId . '.json';
         $temporaryPath = $path . '.' . bin2hex(random_bytes(8)) . '.tmp';
         $contents = json_encode($messages, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        if ($contents === false || file_put_contents($temporaryPath, $contents, LOCK_EX) === false) {
+        if ($contents === false) {
+            throw new RuntimeException('Unable to encode conversation storage.');
+        }
+
+        $bytesWritten = file_put_contents($temporaryPath, $contents, LOCK_EX);
+        if ($bytesWritten !== strlen($contents)) {
+            if (is_file($temporaryPath) && !unlink($temporaryPath)) {
+                error_log('Could not remove an incomplete conversation storage file.');
+            }
             throw new RuntimeException('Unable to write conversation storage.');
         }
         if (!rename($temporaryPath, $path)) {
-            unlink($temporaryPath);
+            if (!unlink($temporaryPath)) {
+                error_log('Could not remove a temporary conversation storage file.');
+            }
             throw new RuntimeException('Unable to save conversation storage.');
         }
         @chmod($path, 0600);

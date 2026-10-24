@@ -12,6 +12,8 @@ export default function ChatWidget() {
   const [messages, setMessages] = useState([{ role: 'assistant', content: WELCOME_MESSAGE }])
   const [conversationId, setConversationId] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [serviceStatus, setServiceStatus] = useState('unknown')
+  const [requestError, setRequestError] = useState(null)
   const conversationRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -22,13 +24,17 @@ export default function ChatWidget() {
     }
   }, [messages, open, minimized, loading])
 
-  const sendMessage = async (event) => {
-    event.preventDefault()
-    const text = message.trim()
+  const sendMessage = async (event, retryText) => {
+    event?.preventDefault()
+    const retrying = typeof retryText === 'string'
+    const text = (retrying ? retryText : message).trim()
     if (!text || loading) return
 
-    setMessages((current) => [...current, { role: 'user', content: text }])
-    setMessage('')
+    if (!retrying) {
+      setMessages((current) => [...current, { role: 'user', content: text }])
+      setMessage('')
+    }
+    setRequestError(null)
     setLoading(true)
     try {
       const response = await api.post('/api/chat', {
@@ -39,13 +45,15 @@ export default function ChatWidget() {
       if (typeof result?.message !== 'string' || !result.message.trim()) {
         throw new Error('The chat service returned an empty response.')
       }
+      setServiceStatus('online')
       setConversationId(result.conversation_id || null)
       setMessages((current) => [...current, { role: 'assistant', content: result.message }])
     } catch (error) {
-      setMessages((current) => [
-        ...current,
-        { role: 'assistant', content: error.message || 'I’m having trouble connecting right now. Please try again in a moment.' },
-      ])
+      setServiceStatus('offline')
+      setRequestError({
+        message: error.message || 'I’m having trouble connecting right now. Please try again in a moment.',
+        retryText: text,
+      })
     } finally {
       setLoading(false)
     }
@@ -59,7 +67,7 @@ export default function ChatWidget() {
             <span className="dr-chat-avatar" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M4 13.5 5.6 8a2 2 0 0 1 1.9-1.4h9A2 2 0 0 1 18.4 8l1.6 5.5v5h-2v-2H6v2H4v-5.5Z" /><path d="M5 13.5h14M7 11h.01M17 11h.01" /></svg>
             </span>
-            <span className="dr-chat-title"><strong>DriveRent support</strong><small>Car rental assistance</small></span>
+            <span className="dr-chat-title"><strong>DriveRent support</strong><small>Car rental assistance</small><span className={`dr-chat-status dr-chat-status-${serviceStatus}`} aria-live="polite"><i />{serviceStatus === 'unknown' ? 'Status unknown' : serviceStatus === 'online' ? 'Online' : 'Offline'}</span></span>
             <div className="dr-chat-header-actions">
               <button type="button" onClick={() => setMinimized((current) => !current)} aria-label={minimized ? 'Expand chat' : 'Minimize chat'}>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d={minimized ? 'M5 12h14M12 5l7 7-7 7' : 'M5 12h14'} /></svg>
@@ -79,6 +87,14 @@ export default function ChatWidget() {
                     </div>
                   </div>
                 ))}
+                {requestError && (
+                  <div className="dr-chat-error" role="alert">
+                    <span>Message not sent. {requestError.message}</span>
+                    <button type="button" onClick={() => sendMessage(null, requestError.retryText)} disabled={loading}>
+                      Retry
+                    </button>
+                  </div>
+                )}
                 {loading && <div className="dr-chat-row dr-chat-row-assistant"><div className="dr-chat-bubble dr-chat-typing" role="status" aria-label="Assistant is responding"><i /><i /><i /></div></div>}
               </div>
               <form className="dr-chat-form" onSubmit={sendMessage}>

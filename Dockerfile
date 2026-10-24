@@ -11,6 +11,7 @@ RUN a2enmod rewrite
 # Allow .htaccess overrides
 RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
  
+##
 # Copy app files
 COPY . /var/www/html/
  

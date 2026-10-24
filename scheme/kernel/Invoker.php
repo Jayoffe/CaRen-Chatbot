@@ -383,6 +383,22 @@ class Invoker {
         {
             $this->model($autoload['models']);
         }
+		if(!empty($autoload['controllers']))
+        {
+            foreach($autoload['controllers'] as $controller)
+            {
+                if (!is_string($controller) || !preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $controller)) {
+                    throw new InvalidArgumentException('Invalid controller name in autoload configuration.');
+                }
+
+                $path = APP_DIR . 'controllers/' . $controller . '.php';
+                if (!is_file($path)) {
+                    throw new RuntimeException("Unable to locate the '{$controller}' controller.");
+                }
+
+                include_once $path;
+            }
+        }
 		if(count($autoload['helpers']) > 0)
         {
             $this->helper($autoload['helpers']);

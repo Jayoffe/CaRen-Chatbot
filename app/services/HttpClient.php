@@ -1,7 +1,5 @@
 <?php
 defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
-require_once APP_DIR . 'services/ProviderException.php';
-
 class HttpClient
 {
     public function postJson($provider, $url, array $headers, array $payload, $timeout)

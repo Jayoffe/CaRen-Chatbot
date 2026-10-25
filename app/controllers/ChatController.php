@@ -221,13 +221,21 @@ class ChatController extends Controller
 
     private function respond(array $payload, $status, array $headers = [])
     {
+        $body = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        if ($body === false) {
+            error_log('Chat API response could not be encoded: ' . json_last_error_msg());
+            $status = 500;
+            $body = '{"success":false,"error":{"code":"RESPONSE_ENCODING_ERROR","message":"The chat response could not be generated."}}';
+        }
+
         http_response_code((int) $status);
         header('Content-Type: application/json; charset=utf-8');
         header('Cache-Control: no-store');
+        header('Content-Length: ' . strlen($body));
         foreach ($headers as $header) {
             header($header);
         }
-        echo json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        echo $body;
         exit;
     }
 }

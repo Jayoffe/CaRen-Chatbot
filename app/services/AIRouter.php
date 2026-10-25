@@ -2,6 +2,7 @@
 defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 class AIRouter
 {
+    private $providerClasses;
     private $providers;
     private $timeout;
     private $fallbackEnabled;
@@ -9,11 +10,12 @@ class AIRouter
 
     public function __construct()
     {
-        $this->providers = [
-            'groq' => new GroqProvider(),
-            'mistral' => new MistralProvider(),
-            'ollama' => new OllamaProvider()
+        $this->providerClasses = [
+            'groq' => GroqProvider::class,
+            'mistral' => MistralProvider::class,
+            'ollama' => OllamaProvider::class,
         ];
+        $this->providers = [];
         $this->timeout = $this->positiveInteger(getenv('AI_REQUEST_TIMEOUT'), 60, 120);
         $this->fallbackEnabled = filter_var(getenv('AI_ENABLE_FALLBACK') ?: 'true', FILTER_VALIDATE_BOOLEAN);
 
@@ -52,7 +54,7 @@ class AIRouter
 
         foreach ($candidates as $name) {
             try {
-                $result = $this->providers[$name]->complete($messages, $this->timeout);
+                $result = $this->provider($name)->complete($messages, $this->timeout);
                 $result['provider'] = $name;
                 return $result;
             } catch (ProviderException $exception) {
@@ -87,6 +89,16 @@ class AIRouter
             false,
             $retryAfter
         );
+    }
+
+    private function provider($name)
+    {
+        if (!isset($this->providers[$name])) {
+            $class = $this->providerClasses[$name];
+            $this->providers[$name] = new $class();
+        }
+
+        return $this->providers[$name];
     }
 
     private function positiveInteger($value, $default, $maximum)

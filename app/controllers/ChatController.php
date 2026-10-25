@@ -97,12 +97,12 @@ class ChatController extends Controller
         }
 
         $provider = $input['provider'] ?? (getenv('AI_DEFAULT_PROVIDER') ?: 'auto');
-        if (!is_string($provider) || !in_array($provider, ['auto', 'groq', 'mistral', 'ollama'], true)) {
+        if (!is_string($provider) || !in_array($provider, ['auto', 'google', 'groq', 'mistral', 'ollama'], true)) {
             $this->respond([
                 'success' => false,
                 'error' => [
                     'code' => 'INVALID_PROVIDER',
-                    'message' => 'Provider must be auto, groq, mistral, or ollama.'
+                    'message' => 'Provider must be auto, google, groq, mistral, or ollama.'
                 ]
             ], 400);
         }

@@ -22,11 +22,11 @@ class AIRouter
         $configured = array_map('trim', explode(',', (string) (getenv('AI_PROVIDER_PRIORITY') ?: 'groq,mistral,ollama')));
         $this->priority = [];
         foreach ($configured as $name) {
-            if (isset($this->providers[$name]) && !in_array($name, $this->priority, true)) {
+            if (isset($this->providerClasses[$name]) && !in_array($name, $this->priority, true)) {
                 $this->priority[] = $name;
             }
         }
-        foreach (array_keys($this->providers) as $name) {
+        foreach (array_keys($this->providerClasses) as $name) {
             if (!in_array($name, $this->priority, true)) {
                 $this->priority[] = $name;
             }

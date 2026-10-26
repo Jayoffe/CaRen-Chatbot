@@ -106,12 +106,12 @@ class ChatController extends Controller
         }
 
         $provider = $input['provider'] ?? (getenv('AI_DEFAULT_PROVIDER') ?: 'auto');
-        if (!is_string($provider) || !in_array($provider, ['auto', 'groq', 'mistral', 'ollama'], true)) {
+        if (!is_string($provider) || !in_array($provider, ['auto', 'google', 'groq', 'mistral', 'ollama'], true)) {
             $this->response->send_json([
                 'success' => false,
                 'error' => [
                     'code' => 'INVALID_PROVIDER',
-                    'message' => 'Provider must be auto, groq, mistral, or ollama.'
+                    'message' => 'Provider must be auto, google, groq, mistral, or ollama.'
                 ]
             ], 400, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             exit;
@@ -237,4 +237,23 @@ class ChatController extends Controller
         return min((int) $number, $maximum);
     }
 
+    private function respond(array $payload, $status, array $headers = [])
+    {
+        $body = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        if ($body === false) {
+            error_log('Chat API response could not be encoded: ' . json_last_error_msg());
+            $status = 500;
+            $body = '{"success":false,"error":{"code":"RESPONSE_ENCODING_ERROR","message":"The chat response could not be generated."}}';
+        }
+
+        http_response_code((int) $status);
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-store');
+        header('Content-Length: ' . strlen($body));
+        foreach ($headers as $header) {
+            header($header);
+        }
+        echo $body;
+        exit;
+    }
 }

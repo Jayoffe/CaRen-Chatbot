@@ -24,16 +24,16 @@ php -S 127.0.0.1:3001 -t public public/index.php
    php -r "echo bin2hex(random_bytes(32)), PHP_EOL;"
    ```
 
-2. Set `GROQ_API_KEY` and/or `MISTRAL_API_KEY` in `.env` using newly generated credentials. Do not use keys exposed in chat or commit `.env`.
-3. Configure model names if the defaults are unavailable to your account.
-4. Ensure Ollama is listening on loopback at `http://localhost:11434` and that `llama3.2:3b` is installed. Do not bind Ollama to a public interface.
+2. Create an API key in Google AI Studio and set `GOOGLE_AI_STUDIO_API_KEY` in `.env`, or configure a fallback provider key such as `GROQ_API_KEY` or `MISTRAL_API_KEY`. Do not use keys exposed in chat or commit `.env`.
+3. The default Gemini model is `gemini-2.5-flash`; set `GOOGLE_AI_STUDIO_MODEL` if you need a different model available to your API key. Other provider model names can also be configured.
+4. Ollama is optional. Ensure it is reachable at `OLLAMA_BASE_URL` and that the configured model is installed; `localhost` only works when the chatbot and Ollama share a machine.
 5. Restart Apache/PHP after environment changes if Laragon is not reloading `.env`.
 
 The router sends `Authorization: Bearer <AI_ROUTER_TOKEN>` to this endpoint. Do not embed that shared server token in a public React bundle. For a deployed browser frontend, put the API call behind your existing authenticated backend/session flow or a trusted server-side proxy. The endpoint fails closed if the token is missing or shorter than 32 characters.
 
 For direct local browser calls from React, allow the exact React origin in `app/config/config.php` under `$config['security_headers']['cors']['allowed_origins']` (for example, `http://localhost:5173`). Do not use `*` for a deployed app. CORS is not authentication; do not expose the shared router token in a production browser bundle.
 
-`AI_ENABLE_FALLBACK=true` enables fallback for automatic routing. `provider: "auto"` uses `AI_PROVIDER_PRIORITY` (default `groq,mistral,ollama`). A manually selected provider is not switched unless the request includes `"fallback": true`. Credentials/configuration errors and invalid provider requests are not retried on another provider. Rate limits, timeouts, and provider outages can fall through to the next provider; the router does not sleep and replay a request during the same call, and returns a bounded `retry_after` value if the last provider supplied one.
+`AI_ENABLE_FALLBACK=true` enables fallback for automatic routing. `provider: "auto"` uses `AI_PROVIDER_PRIORITY` (default `google,groq,mistral,ollama`). A manually selected provider is not switched unless the request includes `"fallback": true`. Credentials/configuration errors and invalid provider requests are not retried on another provider. Rate limits, timeouts, and provider outages can fall through to the next provider; the router does not sleep and replay a request during the same call, and returns a bounded `retry_after` value if the last provider supplied one.
 
 Conversation history is limited to `AI_MAX_HISTORY_TURNS` user/assistant turns (default 10). The system prompt is independently configured by `AI_SYSTEM_PROMPT`. Requests default to a 128 KiB maximum body, a 20 requests per 60 seconds per-IP rate limit, and a maximum provider timeout of 120 seconds.
 
@@ -79,7 +79,7 @@ $headers["Content-Type"] = "application/json"
 Test each provider independently before testing automatic routing:
 
 ```powershell
-$body = @{ message = "Say hello in one sentence."; provider = "groq" } | ConvertTo-Json
+$body = @{ message = "Say hello in one sentence."; provider = "google" } | ConvertTo-Json
 Invoke-RestMethod -Method Post -Uri $uri -Headers $headers -Body $body
 
 $body = @{ message = "Say hello in one sentence."; provider = "mistral" } | ConvertTo-Json
@@ -100,7 +100,7 @@ $body = @{ message = "What word did I ask you to remember?"; provider = "auto"; 
 Invoke-RestMethod -Method Post -Uri $uri -Headers $headers -Body $body
 ```
 
-Fallback after a rate limit: set `AI_PROVIDER_PRIORITY=groq,mistral,ollama`, configure all three, then temporarily use a Groq account/model that returns HTTP 429 or reach its quota. Send an automatic request and confirm the response's `provider` is Mistral or Ollama. The router does not provide a fake rate-limit switch.
+Fallback after a rate limit: set `AI_PROVIDER_PRIORITY=google,groq,mistral,ollama`, configure the providers, then temporarily use a provider/model that returns HTTP 429 or reach its quota. Send an automatic request and confirm the response uses a later configured provider. The router does not provide a fake rate-limit switch.
 
 ```powershell
 $body = @{ message = "Test provider fallback."; provider = "auto"; conversation_id = $null } | ConvertTo-Json

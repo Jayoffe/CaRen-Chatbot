@@ -158,7 +158,7 @@ lavalust/
 
 ### AI Router
 
-The optional Groq, Mistral, and Ollama chat API is documented in [docs/ai-router.md](docs/ai-router.md), including configuration, authentication, and PowerShell test commands.
+The Google AI Studio (Gemini), Groq, Mistral, and Ollama chat API is documented in [docs/ai-router.md](docs/ai-router.md), including configuration, authentication, and PowerShell test commands.
 
 ### Database
 
@@ -229,8 +229,8 @@ using a shared bearer token.
 
 1. Copy `.env.example` to `.env`.
 2. Set `AI_ROUTER_TOKEN` to the same private value configured in
-   `..\Back-End\.env`, and configure at least one provider API key or a
-   reachable Ollama service.
+   `..\Back-End\.env`, and configure a Google AI Studio, Groq, or Mistral API
+   key, or a reachable Ollama service.
 3. Start the service from this folder with `php lava serve --port=3001`.
 4. The React app imports the widget from this folder and sends requests through
    the LavaLust API on port 3000.

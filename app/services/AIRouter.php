@@ -11,6 +11,7 @@ class AIRouter
     public function __construct()
     {
         $this->providerClasses = [
+            'google' => GoogleAIStudioProvider::class,
             'groq' => GroqProvider::class,
             'mistral' => MistralProvider::class,
             'ollama' => OllamaProvider::class,
@@ -19,7 +20,7 @@ class AIRouter
         $this->timeout = $this->positiveInteger(getenv('AI_REQUEST_TIMEOUT'), 60, 120);
         $this->fallbackEnabled = filter_var(getenv('AI_ENABLE_FALLBACK') ?: 'true', FILTER_VALIDATE_BOOLEAN);
 
-        $configured = array_map('trim', explode(',', (string) (getenv('AI_PROVIDER_PRIORITY') ?: 'groq,mistral,ollama')));
+        $configured = array_map('trim', explode(',', (string) (getenv('AI_PROVIDER_PRIORITY') ?: 'google,groq,mistral,ollama')));
         $this->priority = [];
         foreach ($configured as $name) {
             if (isset($this->providerClasses[$name]) && !in_array($name, $this->priority, true)) {

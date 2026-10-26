@@ -44,5 +44,6 @@ defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 */
 /** @var object $router **/
 
+///For everyuthign
 $router->get('/', 'Welcome::index');
 $router->post('/api/chat', 'ChatController::chat');

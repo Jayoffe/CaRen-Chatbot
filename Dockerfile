@@ -2,8 +2,11 @@ ARG PHP_VERSION=8.5
  
 FROM php:${PHP_VERSION}-apache
  
-# Install PDO MySQL
-RUN docker-php-ext-install pdo pdo_mysql
+# Install cURL and PDO MySQL for AI provider requests and database access
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libcurl4-openssl-dev \
+    && docker-php-ext-install curl pdo pdo_mysql \
+    && rm -rf /var/lib/apt/lists/*
  
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
@@ -11,6 +14,7 @@ RUN a2enmod rewrite
 # Allow .htaccess overrides
 RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
  
+##
 # Copy app files
 COPY . /var/www/html/
  
